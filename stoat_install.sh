@@ -17,7 +17,7 @@ if ! [[ "$VERSION" =~ [0-9]\.[0-9]+\.[0-9]+ ]]; then
     echo "Exiting..."
     exit
 fi
-echo "Version $VERSION was automatically detected as the latest release. It will be downloaded and installed / updated."
+echo "Version $VERSION was automatically detected as the latest release. It will be downloaded and installed/updated."
 echo "Be sure to have chromium and all the required dependencies installed before proceeding."
 echo ""
 read -sp "Continue ? (Y/n): " ask
@@ -50,4 +50,4 @@ echo "Categories=Network;InstantMessaging;" >> $DESKTOP_FILE
 echo "Terminal=false" >> $DESKTOP_FILE
 echo "Keywords=Chat;Messaging;Stoat;" >> $DESKTOP_FILE
 echo ""
-echo "Installation complete. You can now launch Stoat. You can also use this script to update the application by running the script again when there is a new release."
+echo "Installation/update complete. You can now launch Stoat. You can also use this script to update the application by running the script again when there is a new release."
