@@ -4,17 +4,15 @@ This is a simple shell install script for Stoat, an open source alternative for 
 
 At the moment there is no support for package managers so this script will install stoat from the specified release on github.
 
-# How to use ?
+# Usage
 
 ## Prerequisites
-
-Check the latest release version, update it at the top of the script before launching it.
 
 Be sure to have installed all the dependencies and chromium beforehand.
 
 ## Everything in one command
 
-If you want the simplest experience possible, and paste only one command for everything do :
+If you want the simplest experience possible, you can copy and paste this command that will do everything:
 
 ```shell
 git clone https://github.com/Sylphux/stoat_install_script && cd stoat_install_script && chmod +x stoat_install.sh && ./stoat_install.sh
