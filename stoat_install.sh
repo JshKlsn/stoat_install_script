@@ -1,63 +1,78 @@
-# All variables below this line can be edited to customize your installation.
-
-VERSION=1.3.0 # Fallback version if auto latest release detection is not used. This can be changed if necessary.
 INSTALL_PATH="$HOME/.local/bin/"
-ICON_PATH="$INSTALL_PATH/Stoat-linux-x64/icon.ico"
+INSTALLED_VERSION="$INSTALL_PATH/Stoat-linux-x64/installed-version.txt"
+ICON_PATH="$INSTALL_PATH/icon.ico"
 
-# Don't touch anything below here unless you know what you are doing.
+echo -e "\e[1;95mStoat updater/installer."
+echo -e "\e[1;92mChecking for updates.."
+VERSION=$(curl -s https://github.com/stoatchat/for-desktop | grep -oP '(?<=v)[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 
-echo "Welcome to this basic Stoat install/update script for Linux."
-echo "Would you like to find the latest release available ? If not, the script will default to version $VERSION."
-read -p "Search for latest release ? (Y/n): " ask
+if [ -z "$VERSION" ]; then
+    echo -e "\e[1;91mError: Unable to retrieve the latest version.\e[0m"
+    exit 1
+fi
+
 echo ""
-if [ "$ask" != "n" ]; then
-    echo "Please wait while script finds the latest release version..."
-    FOUND_VERSION=$(searchitem=$(curl -v https://github.com/stoatchat/for-desktop 2>&1 | grep -E '\<span\sclass\=\"css-truncate\scss\-truncate-target\stext-bold\smr-2"\sstyle=\"max-width\:\snone\;\">v([0-9]\.[0-9]+\.[0-9]+)<\/span\>'); grep -Po '([0-9]\.[0-9]+\.[0-9]+)' <<< $searchitem)
-    if ! [[ "$FOUND_VERSION" =~ [0-9]\.[0-9]+\.[0-9]+ ]]; then
-        echo "Error retrieving latest version. Defaulting to $VERSION"
-    else
-        VERSION="$FOUND_VERSION"
-        echo ""
-        echo "Version $VERSION was automatically detected as the latest release. It will be downloaded and installed/updated."
-    fi
-else
-    echo "Defaulting to version $VERSION. This can be changed on the first line of the script."
+echo -e "\e[1;93mThe latest version is $VERSION. You have $(< "$INSTALLED_VERSION") installed.\e[0m"
+echo ""
+
+read -p "Continue? (Y/n): " ask
+if [[ "$ask" == "n" ]]; then
+    echo "Exiting."
+    exit 0
 fi
 
 FILE="Stoat-linux-x64-$VERSION.zip"
-RELEASE_URL="https://github.com/stoatchat/for-desktop/releases/download/v$VERSION/Stoat-linux-x64-$VERSION.zip"
+RELEASE_URL="https://github.com/stoatchat/for-desktop/releases/download/v$VERSION/$FILE"
 ICON_URL="https://raw.githubusercontent.com/stoatchat/assets/refs/heads/main/desktop/icon.ico"
 DESKTOP_FILE="$HOME/.local/share/applications/stoat.desktop"
 
-echo "Be sure to have chromium and all the required dependencies installed before proceeding."
+echo -e "\e[1;93mBe sure to have Chromium and all the required dependencies installed before proceeding.\e[0m"
 echo ""
-read -p "Continue ? (Y/n): " ask
-if [ "$ask" = "n" ]; then
+read -p "Continue? (Y/n): " ask
+if [[ "$ask" == "n" ]]; then
     echo "Exiting."
-    exit
+    exit 0
 fi
-wget -O $FILE $RELEASE_URL && echo "Downloaded $FILE" && output="success" || output="failed"
-if [ "$output" != "success" ]; then
-    echo "Download failed. Check for release version or create an issue in the repo."
-    rm -rf $FILE
-    echo "Exiting."
-    exit
+
+if ! wget -O "$FILE" "$RELEASE_URL"; then
+    echo "Download failed. Check your internet connection and try again."
+    exit 1
 fi
-echo "Downloaded $FILE successfully."
-unzip -o $FILE -d $INSTALL_PATH
-echo "Version $VERSION installed."
-echo "Downloading icon..."
-wget -O $ICON_PATH $ICON_URL
-echo "Creating entry for application..."
-echo "[Desktop Entry]" > $DESKTOP_FILE
-echo "Type=Application" >> $DESKTOP_FILE
-echo "Name=Stoat" >> $DESKTOP_FILE
-echo "GenericName=Stoat" >> $DESKTOP_FILE
-echo "Comment=Open source user-first chat platform." >> $DESKTOP_FILE
-echo "Icon=$ICON_PATH" >> $DESKTOP_FILE
-echo "Exec=$INSTALL_PATH/Stoat-linux-x64/stoat-desktop" >> $DESKTOP_FILE
-echo "Categories=Network;InstantMessaging;" >> $DESKTOP_FILE
-echo "Terminal=false" >> $DESKTOP_FILE
-echo "Keywords=Chat;Messaging;Stoat;" >> $DESKTOP_FILE
+
+echo "Downloaded $FILE"
+
+if ! unzip -o "$FILE" -d "$INSTALL_PATH"; then
+    echo "Extraction failed. Make sure you have unzip installed."
+    rm -f "$FILE"
+    exit 1
+fi
+
+echo -e "\e[1;93mVersion $VERSION installed.\e[0m"
+echo -e "\e[1;92mDownloading icon...\e[0m"
+
+if ! wget -O "$ICON_PATH" "$ICON_URL"; then
+    echo "Icon download failed. Please check the URL."
+    exit 1
+fi
+
+echo -e "\e[1;92mAdding Stoat to application launcher..\e[0m"
+
+echo "$VERSION" | sudo tee "$INSTALLED_VERSION" > /dev/null
+
+
+cat <<EOL | sudo tee "$DESKTOP_FILE" > /dev/null
+[Desktop Entry]
+Version=$VERSION
+Type=Application
+Name=Stoat
+GenericName=Stoat
+Comment=Open source user-first chat platform.
+Icon=$ICON_PATH
+Exec=$INSTALL_PATH/Stoat-linux-x64/stoat-desktop
+Categories=Network;
+Terminal=false
+Keywords=Chat;Messaging;Stoat;Discord;
+EOL
+
 echo ""
-echo "Installation/update complete. You can now launch Stoat. You can also use this script to update the application by running the script again when there is a new release."
+echo -e "\e[1;94mInstallation/update complete. You can now launch Stoat. You can also run this script again to check for and apply updates."
